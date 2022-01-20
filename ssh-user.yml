@@ -1,0 +1,38 @@
+- hosts: localhost
+  vars_prompt:
+
+     - name: username
+       prompt: what is username ?
+       private: no
+
+     - name: auth_key
+       prompt: What is key ?
+       private: no
+
+  tasks:
+      - name: Add user
+        user:
+           name: "{{ username }}"
+           shell: /bin/bash
+
+      - name: Add home directory
+        file:
+           path: "/home/{{ username }}/.ssh"
+           state: directory
+           owner: "{{ username }}"
+           group: "{{ username }}"
+
+      - name: Add key
+        lineinfile:
+          dest: "/home/{{ username }}/.ssh/authorized_keys"
+          state: present
+          create: yes
+          line: "{{ auth_key }}"
+          owner: "{{ username }}"
+          group: "{{ username }}"
+          mode: 0600
+          #register: result
+
+      - name: succcess msg
+        debug:
+           msg: "User {{ username }} successfully created"
