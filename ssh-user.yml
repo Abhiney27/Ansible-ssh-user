@@ -4,35 +4,64 @@
      - name: username
        prompt: what is username ?
        private: no
-
+     
      - name: auth_key
        prompt: What is key ?
        private: no
 
+     
+     - name: sudo
+       prompt: Do you want sudo ?
+       private: no
+
   tasks:
-      - name: Add user
-        user:
-           name: "{{ username }}"
-           shell: /bin/bash
 
-      - name: Add home directory
-        file:
-           path: "/home/{{ username }}/.ssh"
-           state: directory
-           owner: "{{ username }}"
-           group: "{{ username }}"
+        - name: "Check if user {{ username }} already exists"
+          command: bash user_check.sh "{{ username }}"
+          register: user
+          ignore_errors: yes
 
-      - name: Add key
-        lineinfile:
-          dest: "/home/{{ username }}/.ssh/authorized_keys"
-          state: present
-          create: yes
-          line: "{{ auth_key }}"
-          owner: "{{ username }}"
-          group: "{{ username }}"
-          mode: 0600
-          #register: result
+          
+        - name: Add user
+          user:
+             name: "{{ username }}"
+             shell: /bin/bash
+          when: 
 
-      - name: succcess msg
-        debug:
-           msg: "User {{ username }} successfully created"
+        - name: Add home directory
+          file:
+             path: "/home/{{ username }}/.ssh"
+             state: directory
+             owner: "{{ username }}"
+             group: "{{ username }}"
+          when: user.stdout != "user exists"
+
+        - name: Add key
+          lineinfile: 
+            dest: "/home/{{ username }}/.ssh/authorized_keys"
+            state: present
+            create: yes
+            line: "{{ auth_key }}"
+            owner: "{{ username }}"
+            group: "{{ username }}"
+            mode: 0600
+          register: result
+          when: user.stdout != "user exists" 
+
+        - name: "Allow user to sudo without a password"
+          lineinfile:
+            dest: "/etc/sudoers" 
+            state: "present"
+            line: "{{ username }}  ALL=(ALL) NOPASSWD: ALL"
+          when: sudo == "yes" and user.stdout != "user exists"
+
+      
+        - name: User created message
+          debug:
+            msg: "User {{ username }} has been successfully created"
+          when: user.stdout != "user exists"
+
+        - name: User exists message
+          debug:
+            msg: "User {{ username }} is alreday exists"
+          when: user.stdout == "user exists"
