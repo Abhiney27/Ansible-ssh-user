@@ -16,7 +16,7 @@
 
   tasks:
 
-        - name: "Check if user {{ username }} already exists"
+        - name: Check if user {{ username }} already exists
           command: bash user_check.sh "{{ username }}"
           register: user
           ignore_errors: yes
@@ -48,7 +48,7 @@
           register: result
           when: user.stdout != "user exists" 
 
-        - name: "Allow user to sudo without a password"
+        - name: Allow user to sudo without a password
           lineinfile:
             dest: "/etc/sudoers" 
             state: "present"
@@ -63,5 +63,5 @@
 
         - name: User exists message
           debug:
-            msg: "User {{ username }} is alreday exists"
+            msg: "User {{ username }} alreday exists"
           when: user.stdout == "user exists"
